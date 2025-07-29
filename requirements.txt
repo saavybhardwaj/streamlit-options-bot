@@ -1,7 +1,9 @@
 streamlit
-smartapi-python
-pyotp
 pandas
 requests
+altair
+pyotp
 logzero
 websocket-client
+smartapi-python @ git+https://github.com/angel-one/smartapi-python.git
+
