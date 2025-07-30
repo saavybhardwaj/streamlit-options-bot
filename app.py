@@ -54,6 +54,7 @@ else:
     # ===== Post-login Dashboard =====
     st.success(f"Welcome, {st.session_state.user_id}!")
 
+    # Index Selection
     index = st.selectbox("📊 Choose an Index", ["NIFTY", "BANKNIFTY", "SENSEX"])
     st.markdown(f"✅ You have selected **{index}**")
 
@@ -61,7 +62,6 @@ else:
 
     # ===== Logout =====
     if st.button("Logout"):
-        st.session_state.logged_in = False
-        for key in ["auth_submitted", "user_id", "mpin", "totp", "access_token", "feed_token", "profile"]:
+        for key in ["logged_in", "auth_submitted", "user_id", "mpin", "totp", "access_token", "feed_token", "profile"]:
             st.session_state.pop(key, None)
         st.experimental_rerun()
