@@ -1,3 +1,5 @@
+# 🔎 TEMP: show whether ANGEL_API_KEY is available (do not print the key!)
+st.caption("ANGEL_API_KEY present: " + ("✅" if os.getenv("ANGEL_API_KEY") else "❌"))
 from SmartApi.smartConnect import SmartConnect    # <- keep exact case
 import streamlit as st
 import datetime
