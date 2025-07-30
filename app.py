@@ -1,3 +1,7 @@
+from SmartApi.smartConnect import SmartConnect    # <- keep exact case
+import streamlit as st
+import datetime
+import os
 from SmartApi.smartConnect import SmartConnect  # <- note the capital S and A!
 import streamlit as st
 import datetime
