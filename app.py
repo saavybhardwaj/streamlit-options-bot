@@ -60,93 +60,48 @@ def _normalize_token(token_raw: str | None) -> str | None:
         return token_raw[len("Bearer "):]
     return token_raw
 
-# ---------- LOGIN FORM ----------
+# ---------------- LOGIN FORM (replace this section) ----------------
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+# Simple version stamp so we can confirm the deployed code
+st.caption("UI build: v0.3 — login-rerun fix")
+
 if not st.session_state.logged_in:
     with st.form("auth_form"):
         st.subheader("🔐 User Login")
-        user_id = st.text_input("Enter your Angel One Client ID", value=st.session_state.user_id or "")
-        mpin = st.text_input("Enter your MPIN", type="password")
-        totp = st.text_input("Enter your TOTP", type="password")
-        submit = st.form_submit_button("Login")
+        user_id = st.text_input("Enter your Angel One Client ID", value=st.session_state.get("user_id", ""))
+        mpin    = st.text_input("Enter your MPIN", type="password")
+        totp    = st.text_input("Enter your TOTP", type="password")
+        submitted = st.form_submit_button("Login")
 
-    if submit:
-        if not API_KEY:
-            st.error("Please set ANGEL_API_KEY in environment first.")
-        elif not (user_id and mpin and totp):
-            st.error("Please fill all fields.")
-        else:
+    if submitted:
+        try:
+            # Persist user_id so it stays filled if there’s an error
+            st.session_state.user_id = user_id
+
+            # --- Angel One session ---
+            smart_api = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
+            data = smart_api.generateSession(user_id, mpin, totp)
+
+            # Store session safely
+            st.session_state.jwt_token   = (data or {}).get("data", {}).get("jwtToken")
+            st.session_state.feed_token  = (data or {}).get("data", {}).get("feedToken")
+            st.session_state.profile     = smart_api.getProfile((data or {}).get("data", {}).get("jwtToken"))
+            st.session_state.logged_in   = True
+
+            st.success("✅ Login successful!")
+            # IMPORTANT: switch to post-login branch immediately
             try:
-                smart_api = SmartConnect(api_key=API_KEY)
-                data = smart_api.generateSession(user_id, mpin, totp)
-
-                # Save raw response for diagnostics (do not log sensitive tokens)
-                st.session_state.raw_login_response = {
-                    "status": data.get("status"),
-                    "message": data.get("message"),
-                    "has_data": bool(data.get("data")),
-                    # DO NOT print the real tokens; just flags
-                    "has_jwtToken": bool((data.get("data") or {}).get("jwtToken")),
-                    "has_feedToken": bool((data.get("data") or {}).get("feedToken")),
-                }
-
-                if not data or not isinstance(data, dict) or not data.get("data"):
-                    st.error("Login failed: empty/invalid response from API.")
-                else:
-                    payload = data["data"]
-
-                    # Newer SmartAPI returns jwtToken + feedToken (no access_token)
-                    jwt_token_raw = payload.get("jwtToken")          # may include 'Bearer '
-                    feed_token = payload.get("feedToken")
-
-                    jwt_token = _normalize_token(jwt_token_raw)
-
-                    if not jwt_token:
-                        st.error("Login failed: response did not include jwtToken.")
-                        with st.expander("Show raw response"):
-                            st.code(json.dumps(data, indent=2), language="json")
-                    else:
-                        # Store in session
-                        st.session_state.user_id = user_id
-                        st.session_state.jwt_token = jwt_token
-                        st.session_state.feed_token = feed_token
-
-                        # Try fetching profile (some SDKs expect bare token, some accept Bearer)
-                        profile = None
-                        try:
-                            profile = smart_api.getProfile(jwt_token)  # bare token
-                        except Exception:
-                            try:
-                                profile = smart_api.getProfile(jwt_token_raw)  # with Bearer
-                            except Exception:
-                                profile = None
-
-                        st.session_state.profile = profile
-                        st.session_state.logged_in = True
-                        st.success("✅ Login successful!")
-
-                        with st.expander("Session (safe)"):
-                            st.write({
-                                "user_id": st.session_state.user_id,
-                                "jwt_token(masked)": _mask_token(st.session_state.jwt_token),
-                                "feed_token(masked)": _mask_token(st.session_state.feed_token or ""),
-                                "profile_keys": list((st.session_state.profile or {}).keys())
-                            })
-
-            except Exception as e:
-                st.error(f"Login failed with exception: {e}")
-
-    # Optional: Publisher OAuth link
-    st.markdown("---")
-    st.subheader("📲 Mobile OAuth (Publisher Login) (optional)")
-    if API_KEY:
-        oauth_url = f"https://smartapi.angelbroking.com/publisher-login?api_key={API_KEY}"
-        st.link_button("Open Publisher Login", oauth_url)
-    else:
-        st.caption("Set ANGEL_API_KEY to enable OAuth link.")
-
-    if st.session_state.raw_login_response:
-        with st.expander("Last login response (safe)"):
-            st.json(st.session_state.raw_login_response)
+                st.experimental_rerun()   # Streamlit < 1.30
+            except Exception:
+                st.rerun()                 # Streamlit ≥ 1.30
+        except Exception as e:
+            st.error(f"Login failed: {e}")
+else:
+    # ---------------- POST-LOGIN UI ----------------
+    st.success(f"Welcome, {st.session_state.user_id}!")
+    # (your post-login block with index → ATM → CE/PE, etc., goes here)
 
 # ---------- POST-LOGIN ----------
 else:
