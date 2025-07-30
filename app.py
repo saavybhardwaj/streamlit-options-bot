@@ -20,10 +20,6 @@ def get_api_key() -> str:
 # ---------------------
 st.title("📈 Options Buy Strategy - NIFTY / BANKNIFTY / SENSEX")
 st.markdown("This is a demo app for deploying a real-time options strategy using Angel One API.")
-
-# TEMP check: shows if env var is available (remove later)
-st.caption("ANGEL_API_KEY present: " + ("✅" if get_api_key() else "❌"))
-
 # ---------------------
 # Session state defaults
 # ---------------------
