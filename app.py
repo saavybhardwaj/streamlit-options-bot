@@ -1,5 +1,5 @@
 # ===== Imports =====
-from smartapi.smartConnect import SmartConnect
+from SmartApi.smartConnect import SmartConnect
 import streamlit as st
 import datetime
 import pyotp
