@@ -8,6 +8,11 @@ from SmartApi.smartConnect import SmartConnect  # <- note the capital S and A!
 import streamlit as st
 import datetime
 
+def get_api_key() -> str:
+    key = os.getenv("ANGEL_API_KEY", "").strip()
+    return key
+
+
 st.set_page_config(page_title="Options Buy Strategy", layout="centered")
 
 st.title("📈 Options Buy Strategy - NIFTY / BANKNIFTY / SENSEX")
